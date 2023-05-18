@@ -1,0 +1,16 @@
+.module {
+	background-color: var(--background-color);
+	color: var(--text-color);
+	padding-top: var(--module-margin);
+	padding-bottom: var(--module-margin);
+
+	&.light {
+		--background-color: white;
+		--text-color: black;
+	}
+
+	&.dark {
+		--background-color: black;
+		--text-color: white;
+	}
+}

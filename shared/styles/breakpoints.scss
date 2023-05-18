@@ -1,0 +1,18 @@
+// Breakpoints
+$screenXXS: 320px;
+$screenXS: 480px;
+$screenSM: 768px;
+$screenMD: 1024px;
+$screenLG: 1440px;
+
+$screenXSmin: $screenXXS;
+$screenSMmin: $screenXS;
+$screenMDmin: $screenSM;
+$screenLGmin: $screenMD;
+$screenXLmin: $screenLG;
+
+$screenXXSmax: calc($screenXXS - 0.02px);
+$screenXSmax: calc($screenXS - 0.02px);
+$screenSMmax: calc($screenSM - 0.02px);
+$screenMDmax: calc($screenMD - 0.02px);
+$screenLGmax: calc($screenLG - 0.02px);

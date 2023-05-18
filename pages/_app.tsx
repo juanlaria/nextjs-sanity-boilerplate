@@ -1,4 +1,5 @@
-import 'styles/global.css'
+import 'shared/styles/reset.scss'
+import 'shared/styles/base.scss'
 
 import { IBM_Plex_Mono, Inter, PT_Serif } from '@next/font/google'
 import { AppProps } from 'next/app'

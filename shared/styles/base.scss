@@ -1,0 +1,27 @@
+@import 'shared/styles/breakpoints.scss';
+@import 'shared/styles/variables.scss';
+
+body {
+	background-color: var(--background-color);
+	color: var(--text-color);
+}
+
+.container {
+	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: var(--grid-margin);
+	padding-right: var(--grid-margin);
+  
+	/* Extra large devices (large desktops, 1440px and up) */
+	@media (min-width: $screenXLmin) {
+	  max-width: 1440px;
+	}
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr));
+	row-gap: var(--grid-gap);
+	column-gap: var(--grid-gap);
+}

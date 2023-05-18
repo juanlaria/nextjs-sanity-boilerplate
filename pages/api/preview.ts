@@ -1,53 +1,83 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import type { PageConfig } from 'next/types'
+import { createClient } from 'next-sanity'
 
-import { previewSecretDocumentId, readToken } from '../../sanity/env'
-import { client } from '../../sanity/lib/client'
-import { getPreviewSecret } from '../../sanity/lib/previewSecret'
+import {
+  apiVersion,
+  dataset,
+  previewSecretId,
+  projectId,
+  useCdn,
+} from '~/sanity/lib/api'
+import { resolveHref } from '~/sanity/lib/links'
+import { getSecret } from '~/sanity/plugins/productionUrl/utils'
+
+// res.setPreviewData only exists in the nodejs runtime, setting the config here allows changing the global runtime
+// option in next.config.mjs without breaking preview mode
+export const config: PageConfig = { runtime: 'nodejs' }
+
+function redirectToPreview(
+  res: NextApiResponse<string | void>,
+  previewData: { token?: string },
+  Location: string
+): void {
+  // Enable Preview Mode by setting the cookies
+  res.setPreviewData(previewData)
+  // Redirect to a preview capable route
+  // FIXME: https://github.com/sanity-io/nextjs-blog-cms-sanity-v3/issues/95
+  // res.writeHead(307, { Location })
+  res.writeHead(307, {
+    Location: Location,
+  })
+  res.end()
+}
+
+const _client = createClient({ projectId, dataset, apiVersion, useCdn })
 
 export default async function preview(
   req: NextApiRequest,
   res: NextApiResponse<string | void>
 ) {
-  if (!readToken) {
-    res.status(500).send('Misconfigured server')
-    return
-  }
-
-  const { query } = req
-
-  const secret = typeof query.secret === 'string' ? query.secret : undefined
-  const slug = typeof query.slug === 'string' ? query.slug : undefined
-
-  if (!secret) {
-    res.status(401)
-    res.send('Invalid secret')
-    return
-  }
-
-  const authClient = client.withConfig({ useCdn: false, token: readToken })
-
-  // The secret can't be stored in an env variable with a NEXT_PUBLIC_ prefix, as it would make you
-  // vulnerable to leaking the token to anyone. If you don't have an custom API with authentication
-  // that can handle checking secrets, you may use https://github.com/sanity-io/sanity-studio-secrets
-  // to store the secret in your dataset.
-  const storedSecret = await getPreviewSecret({
-    client: authClient,
-    id: previewSecretDocumentId,
-  })
-
-  // This is the most common way to check for auth, but we encourage you to use your existing auth
-  // infra to protect your token and securely transmit it to the client
-  if (secret !== storedSecret) {
+  const previewData: { token?: string } = {}
+  // If you want to require preview mode sessions to be started from the Studio, set the SANITY_REQUIRE_PREVIEW_SECRET
+  // environment variable to 'true'. The benefit of doing this that unauthorized users attempting to brute force into your
+  // preview mode won't make it past the secret check, and only legitimate users are able to bypass the statically generated pages and load up
+  // the serverless-powered preview mode.
+  if (
+    process.env.SANITY_REQUIRE_PREVIEW_SECRET === 'true' &&
+    !req.query.secret
+  ) {
     return res.status(401).send('Invalid secret')
   }
 
-  if (slug) {
-    res.setPreviewData({ token: readToken })
-    res.writeHead(307, { Location: `/${slug}` })
-    res.end()
-    return
+  // If a secret is present in the URL, verify it and if valid we upgrade to token based preview mode, which works in Safari and Incognito mode
+  if (req.query.secret) {
+    const token = process.env.SANITY_API_READ_TOKEN
+    if (!token) {
+      throw new Error(
+        'A secret is provided but there is no `SANITY_API_READ_TOKEN` environment variable setup.'
+      )
+    }
+    const client = _client.withConfig({ useCdn: false, token })
+    const secret = await getSecret(client, previewSecretId)
+    if (req.query.secret !== secret) {
+      return res.status(401).send('Invalid secret')
+    }
+    previewData.token = token
   }
 
-  res.status(404).send('Slug query parameter is required')
-  res.end()
+  const href = resolveHref(
+    req.query.documentType as string,
+    req.query.slug as string
+  )
+
+  if (!href) {
+    return res
+      .status(400)
+      .send(
+        'Unable to resolve preview URL based on the current document type and slug'
+      )
+  }
+
+  return redirectToPreview(res, previewData, href)
 }

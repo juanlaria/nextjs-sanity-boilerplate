@@ -1,0 +1,30 @@
+:root {
+  // Colors
+  // ---- Primary
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --text-color: white;
+  --background-color: black;
+
+  // Fonts
+  --font-neue: Helvetica, Arial, sans-serif;
+  --font-neueDisplay: Helvetica, Arial, sans-serif;
+  --font-neueDisplayUltra: Helvetica, Arial, sans-serif;
+  --font-neueDisplayRandom: Helvetica, Arial, sans-serif;
+
+  --grid-cols: 4;
+  --grid-gap: 24px;
+  --grid-margin: 24px;
+  --module-margin: 48px;
+
+  @media (min-width: $screenSMmin) {
+    --grid-margin: 32px;
+    --grid-cols: 8;
+  }
+
+  @media (min-width: $screenLGmin) {
+    --grid-margin: 48px;
+    --grid-cols: 12;
+  }
+}
